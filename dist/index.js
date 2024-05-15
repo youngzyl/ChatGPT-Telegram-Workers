@@ -1217,6 +1217,7 @@ ERROR: ${e.message}`;
   }
 }
 async function requestImageFromOpenAI(prompt, context) {
+  console.log('function start')
   let url = `${ENV.OPENAI_API_BASE}/images/generations`;
   const header = {
     "Content-Type": "application/json",
@@ -1228,6 +1229,7 @@ async function requestImageFromOpenAI(prompt, context) {
     size: context.USER_CONFIG.DALL_E_IMAGE_SIZE,
     model: context.USER_CONFIG.DALL_E_MODEL
   };
+
   if (body.model === "dall-e-3") {
     body.quality = context.USER_CONFIG.DALL_E_IMAGE_QUALITY;
     body.style = context.USER_CONFIG.DALL_E_IMAGE_STYLE;
@@ -1241,6 +1243,7 @@ async function requestImageFromOpenAI(prompt, context) {
         break;
       case "auto":
         isAzureModel = isAzureEnable(context) && context.USER_CONFIG.AZURE_DALLE_API !== null;
+        console.log('isAzureModel? :',isAzureModel);
         break;
       default:
         break;
@@ -1256,6 +1259,8 @@ async function requestImageFromOpenAI(prompt, context) {
       delete body.model;
     }
   }
+  console.log('request body:',body,'request header',header,'fetch url:',url);
+  console.log('request start');
   const resp = await fetch(url, {
     method: "POST",
     headers: header,
@@ -1264,8 +1269,11 @@ async function requestImageFromOpenAI(prompt, context) {
   if (resp.error?.message) {
     throw new Error(resp.error.message);
   }
+  const respurl = resp.data[0].url;
+  console.log('request success, url:', respurl);
   return resp.data[0].url;
-}
+  }
+  
 async function updateBotUsage(usage, context) {
   if (!ENV.ENABLE_USAGE_STATISTICS) {
     return;
@@ -1529,11 +1537,13 @@ function loadImageGen(context) {
     case "openai":
       return requestImageFromOpenAI;
     case "azure":
+      console.log('switch case azure returned',requestImageFromOpenAI)
       return requestImageFromOpenAI;
     case "workers":
       return requestImageFromWorkersAI;
     default:
       if (isOpenAIEnable(context) || isAzureEnable(context)) {
+        console.log('default returned:',isOpenAIEnable(context) || isAzureEnable(context))
         return requestImageFromOpenAI;
       }
       if (isWorkersAIEnable(context)) {
