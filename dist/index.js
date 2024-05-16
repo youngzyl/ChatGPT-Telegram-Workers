@@ -1217,7 +1217,7 @@ ERROR: ${e.message}`;
   }
 }
 async function requestImageFromOpenAI(prompt, context) {
-  console.log('function start')
+  console.log('function start');
   let url = `${ENV.OPENAI_API_BASE}/images/generations`;
   const header = {
     "Content-Type": "application/json",
@@ -1229,23 +1229,27 @@ async function requestImageFromOpenAI(prompt, context) {
     size: context.USER_CONFIG.DALL_E_IMAGE_SIZE,
     model: context.USER_CONFIG.DALL_E_MODEL
   };
-
   if (body.model === "dall-e-3") {
     body.quality = context.USER_CONFIG.DALL_E_IMAGE_QUALITY;
     body.style = context.USER_CONFIG.DALL_E_IMAGE_STYLE;
   }
   {
-    const provider = context.USER_CONFIG.AI_PROVIDER;
+    console.log('const provider start');
+    const provider = context.USER_CONFIG.AI_IMAGE_PROVIDER;
+    console.log('ConstedProvider: ', provider)
+    console.log('ConstedProvidertof: ', provider === "azure")
     let isAzureModel = false;
     switch (provider) {
       case "azure":
         isAzureModel = true;
+        console.log('isAzureModel(azure)? :',isAzureModel);
         break;
       case "auto":
         isAzureModel = isAzureEnable(context) && context.USER_CONFIG.AZURE_DALLE_API !== null;
-        console.log('isAzureModel? :',isAzureModel);
+        console.log('isAzureModel(auto)? :',isAzureModel);
         break;
       default:
+        console.log('isAzureModel(default)? :',isAzureModel);
         break;
     }
     if (isAzureModel) {
@@ -1255,12 +1259,14 @@ async function requestImageFromOpenAI(prompt, context) {
         body.size = "1024x1024";
       }
       header["api-key"] = azureKeyFromContext(context);
+      console.log('isAzureModel(deleting)? :',isAzureModel);
       delete header["Authorization"];
       delete body.model;
     }
   }
-  console.log('request body:',body,'request header',header,'fetch url:',url);
+  console.log('const provider end');
   console.log('request start');
+  console.log('request body:',body,'request header',header,'fetch url:',url);
   const resp = await fetch(url, {
     method: "POST",
     headers: header,
@@ -1273,7 +1279,6 @@ async function requestImageFromOpenAI(prompt, context) {
   console.log('request success, url:', respurl);
   return resp.data[0].url;
   }
-  
 async function updateBotUsage(usage, context) {
   if (!ENV.ENABLE_USAGE_STATISTICS) {
     return;
